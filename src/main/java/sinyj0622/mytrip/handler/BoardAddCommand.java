@@ -1,50 +1,41 @@
 package sinyj0622.mytrip.handler;
 
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.sql.Date;
-
+import sinyj0622.mytrip.dao.BoardDao;
 import sinyj0622.mytrip.domain.Board;
 import sinyj0622.util.Prompt;
 
 public class BoardAddCommand implements Command {
 
-	ObjectOutputStream out;
-	ObjectInputStream in;
+  BoardDao boardDao;
+  Prompt prompt;
 
-	Prompt prompt;
+  public BoardAddCommand(BoardDao boardDao, Prompt prompt) {
+    this.boardDao = boardDao;
+    this.prompt = prompt;
+  }
 
-	public BoardAddCommand(ObjectOutputStream out, ObjectInputStream in, Prompt prompt) {
-		this.out = out;
-		this.in = in;
-		this.prompt = prompt;
-	}
+  @Override
+  public void execute() {
+    Board board = new Board();
+    board.setNo(prompt.inputInt("번호: "));
+    board.setText(prompt.inputString("내용: "));
+    board.setDate(new Date(System.currentTimeMillis()));
+    board.setViewCount(0);
 
-	@Override
-	public void execute() {
-		Board board = new Board();
-		board.setNo(prompt.inputInt("번호: "));
-		board.setText(prompt.inputString("내용: "));
-		board.setDate(new Date(System.currentTimeMillis()));
-		board.setViewCount(0);
 
-		try {
-			out.writeUTF("/board/add");
-			out.writeObject(board);
-			out.flush();
-			
-			String response = in.readUTF();
-			if (response.equals("FAIL")) {
-				System.out.println(in.readUTF());
-				return;
-			}
-			
-			System.out.println("게시글을 저장하였습니다.");
-			
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.out.println("통신 오류!");
-		}
-	}
+    try {
+      if (boardDao.insert(board) == 1) {
+        System.out.println("저장하였습니다.");
+      }
+
+    } catch (Exception e) {
+      System.out.println("저장 실패: ");
+      e.printStackTrace();
+    }
+
+
+
+  }
 
 }

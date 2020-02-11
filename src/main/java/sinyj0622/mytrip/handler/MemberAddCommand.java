@@ -1,30 +1,26 @@
 package sinyj0622.mytrip.handler;
 
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.sql.Date;
-
+import sinyj0622.mytrip.dao.MemberDao;
 import sinyj0622.mytrip.domain.Member;
 import sinyj0622.util.Prompt;
 
-public class MemberAddCommand implements Command{
+public class MemberAddCommand implements Command {
 
 
-	ObjectOutputStream out;
-	ObjectInputStream in;
+  MemberDao memberDao;
+  Prompt prompt;
 
-	Prompt prompt;
-
-	public MemberAddCommand(ObjectOutputStream out, ObjectInputStream in, Prompt prompt) {
-		this.out = out;
-		this.in = in;
-		this.prompt = prompt;
-	}
+  public MemberAddCommand(MemberDao memberDao, Prompt prompt) {
+    this.memberDao = memberDao;
+    this.prompt = prompt;
+  }
 
 
+  @Override
   public void execute() {
-	  
-	  
+
+
     Member member = new Member();
     member.setNo(prompt.inputInt("번호: "));
     member.setName(prompt.inputString("이름: "));
@@ -36,22 +32,16 @@ public class MemberAddCommand implements Command{
     member.setRegisteredDate(new Date(System.currentTimeMillis()));
 
     try {
-    out.writeUTF("/member/add");
-    out.writeObject(member);
-    
-    
-    String response = in.readUTF();
-	  if (response.equals("FAIL")) {
-		  System.out.println(in.readUTF());
-	  }
-	  
-    System.out.println("회원 정보를 저장하였습니다.");
+      if (memberDao.insert(member) == 1) {
+        System.out.println("저장하였습니다.");
+      }
+
     } catch (Exception e) {
-    	System.out.println("통신 오류!");
-    	e.printStackTrace();
+      System.out.println("저장 실패!");
+      e.printStackTrace();
     }
   }
 
- 
+
 
 }

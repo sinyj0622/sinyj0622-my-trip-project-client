@@ -1,68 +1,46 @@
 package sinyj0622.mytrip.handler;
 
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.sql.Date;
-
+import sinyj0622.mytrip.dao.BoardDao;
 import sinyj0622.mytrip.domain.Board;
 import sinyj0622.util.Prompt;
 
 public class BoardUpdateCommand implements Command {
 
-	ObjectOutputStream out;
-	ObjectInputStream in;
+  BoardDao boardDao;
+  Prompt prompt;
 
-	Prompt prompt;
+  public BoardUpdateCommand(BoardDao boardDao, Prompt prompt) {
+    this.boardDao = boardDao;
+    this.prompt = prompt;
+  }
 
-	public BoardUpdateCommand(ObjectOutputStream out, ObjectInputStream in, Prompt prompt) {
-		this.out = out;
-		this.in = in;
-		this.prompt = prompt;
-	}
+  @Override
+  public void execute() {
+    try {
+      int no = prompt.inputInt("번호? ");
 
-	@Override
-	public void execute() {
-		try {
-			int no = prompt.inputInt("번호? ");
+      Board oldBoard = boardDao.findByNo(no);
+      Board newBoard = new Board();
 
-			out.writeUTF("/board/detail");
-			out.writeInt(no);
-			out.flush();
+      newBoard.setNo(oldBoard.getNo());
+      newBoard.setViewCount(oldBoard.getViewCount());
+      newBoard.setDate(new Date(System.currentTimeMillis()));
+      newBoard.setText(prompt.inputString(String.format("내용(%s)? ", oldBoard.getText())));
 
-			String response = in.readUTF();
-			if (response.equals("FAIL")) {
-				System.out.println(in.readUTF());
-				return;
-			}
+      if (newBoard.equals(oldBoard)) {
+        System.out.println("변경을 취소했습니다.");
+        return;
+      }
 
-			Board oldBoard = (Board) in.readObject();
-			Board newBoard = new Board();
+      if (boardDao.update(newBoard) == 1) {
+        System.out.println("변경했습니다.");
+      }
 
-			newBoard.setNo(oldBoard.getNo());
-			newBoard.setViewCount(oldBoard.getViewCount());
-			newBoard.setDate(new Date(System.currentTimeMillis()));
-			newBoard.setText(prompt.inputString(String.format("내용(%s)? ", oldBoard.getText())));
-
-			if (newBoard.equals(oldBoard)) {
-				System.out.println("게시글 변경을 취소했습니다.");
-				return;
-			}
-
-			out.writeUTF("/board/update");
-			out.writeObject(newBoard);
-			out.flush();
-
-			response = in.readUTF();
-			if (response.equals("FAIL")) {
-				System.out.println(in.readUTF());
-				return;
-			}
-
-			System.out.println("게시글을 변경했습니다.");
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.out.println("통신 오류!");
-		}
-	}
+    } catch (Exception e) {
+      e.printStackTrace();
+      System.out.println("변경 실패!");
+    }
+  }
 
 }
