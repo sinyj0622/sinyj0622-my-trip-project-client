@@ -22,7 +22,6 @@ public class PlanListCommand implements Command {
             p.getStartDate(), p.getEndDate());
       }
     } catch (Exception e) {
-      e.printStackTrace();
       System.out.println("조회 실패!");
     }
   }

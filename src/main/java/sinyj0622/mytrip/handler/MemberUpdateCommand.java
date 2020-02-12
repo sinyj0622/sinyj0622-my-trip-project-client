@@ -56,7 +56,6 @@ public class MemberUpdateCommand implements Command {
       }
 
     } catch (Exception e) {
-      e.printStackTrace();
       System.out.println("변경 실패!");
     }
   }

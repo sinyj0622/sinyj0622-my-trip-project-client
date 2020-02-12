@@ -32,7 +32,6 @@ public class PlanAddCommand implements Command {
       }
 
     } catch (Exception e) {
-      e.printStackTrace();
       System.out.println("저장 실패!");
     }
   }

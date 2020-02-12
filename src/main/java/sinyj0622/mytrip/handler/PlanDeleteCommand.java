@@ -24,7 +24,6 @@ public class PlanDeleteCommand implements Command {
       }
 
     } catch (Exception e) {
-      e.printStackTrace();
       System.out.println("삭제 실패!");
     }
   }

@@ -30,7 +30,6 @@ public class PlanDetailCommand implements Command {
       System.out.println();
     } catch (Exception e) {
       System.out.println("조회 실패!");
-      e.printStackTrace();
     }
   }
 }

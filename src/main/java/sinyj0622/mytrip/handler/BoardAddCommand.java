@@ -30,8 +30,7 @@ public class BoardAddCommand implements Command {
       }
 
     } catch (Exception e) {
-      System.out.println("저장 실패: ");
-      e.printStackTrace();
+      System.out.println("저장 실패!");
     }
 
 

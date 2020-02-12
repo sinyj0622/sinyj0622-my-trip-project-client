@@ -27,7 +27,6 @@ public class BoardDetailCommand implements Command {
 
     } catch (Exception e) {
       System.out.println("조회 실패!");
-      e.printStackTrace();
     }
   }
 

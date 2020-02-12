@@ -38,7 +38,6 @@ public class MemberAddCommand implements Command {
 
     } catch (Exception e) {
       System.out.println("저장 실패!");
-      e.printStackTrace();
     }
   }
 
