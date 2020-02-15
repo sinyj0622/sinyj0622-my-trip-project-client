@@ -11,10 +11,12 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Scanner;
+
 import sinyj0622.mytrip.dao.BoardDao;
 import sinyj0622.mytrip.dao.MemberDao;
 import sinyj0622.mytrip.dao.PlanDao;
 import sinyj0622.mytrip.dao.proxy.BoardDaoProxy;
+import sinyj0622.mytrip.dao.proxy.DaoProxyHelper;
 import sinyj0622.mytrip.dao.proxy.MemberDaoProxy;
 import sinyj0622.mytrip.dao.proxy.PlanDaoProxy;
 import sinyj0622.mytrip.handler.BoardAddCommand;
@@ -62,10 +64,12 @@ public class ClientApp {
 		}
 		
 		this.commandMap = new HashMap<>();
+		
+		DaoProxyHelper daoProxyHelper = new DaoProxyHelper(serverAddr, port);
 
-		BoardDao boardDao = new BoardDaoProxy(serverAddr, port);
-		MemberDao memberDao = new MemberDaoProxy(serverAddr, port);
-		PlanDao planDao = new PlanDaoProxy(serverAddr, port);
+		BoardDao boardDao = new BoardDaoProxy(daoProxyHelper);
+		MemberDao memberDao = new MemberDaoProxy(daoProxyHelper);
+		PlanDao planDao = new PlanDaoProxy(daoProxyHelper);
 
 		commandMap.put("/board/list", new BoardListCommand(boardDao));
 		commandMap.put("/board/add", new BoardAddCommand(boardDao, prompt));

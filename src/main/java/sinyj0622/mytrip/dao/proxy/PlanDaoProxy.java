@@ -9,19 +9,15 @@ import sinyj0622.mytrip.domain.Plan;
 
 public class PlanDaoProxy implements PlanDao {
 
-	String serverAddr;
-	int port;
+	DaoProxyHelper daoProxyHelper;
 
-	public PlanDaoProxy(String serverAddr, int port) {
-		this.serverAddr = serverAddr;
-		this.port = port;
+	public PlanDaoProxy(DaoProxyHelper daoProxyHelper) {
+		this.daoProxyHelper = daoProxyHelper;
 	}
 
 	@Override
 	public int insert(Plan travelPlan) throws Exception {
-		try (Socket socket = new Socket(serverAddr, port);
-				ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-				ObjectInputStream in = new ObjectInputStream(socket.getInputStream())) {
+		return (int) daoProxyHelper.request((out, in) -> {
 			out.writeUTF("/plan/add");
 			out.writeObject(travelPlan);
 			out.flush();
@@ -31,16 +27,15 @@ public class PlanDaoProxy implements PlanDao {
 				throw new Exception(in.readUTF());
 			}
 			return 1;
-		}
+		});
+			
 	}
 
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public List<Plan> findAll() throws Exception {
-		try (Socket socket = new Socket(serverAddr, port);
-				ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-				ObjectInputStream in = new ObjectInputStream(socket.getInputStream())) {
+		return (List<Plan>) daoProxyHelper.request((out, in) -> {
 			out.writeUTF("/plan/list");
 
 			out.flush();
@@ -51,14 +46,12 @@ public class PlanDaoProxy implements PlanDao {
 			}
 
 			return (List<Plan>) in.readObject();
-		}
+		});
 	}
 
 	@Override
 	public Plan findByNo(int no) throws Exception {
-		try (Socket socket = new Socket(serverAddr, port);
-				ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-				ObjectInputStream in = new ObjectInputStream(socket.getInputStream())) {
+		return (Plan) daoProxyHelper.request((out, in) -> {
 			out.writeUTF("/plan/detail");
 			out.writeInt(no);
 			out.flush();
@@ -69,15 +62,13 @@ public class PlanDaoProxy implements PlanDao {
 				throw new Exception(in.readUTF());
 			}
 			return (Plan) in.readObject();
-		}
+		});
 	}
 
 
 	@Override
 	public int update(Plan newPlan) throws Exception {
-		try (Socket socket = new Socket(serverAddr, port);
-				ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-				ObjectInputStream in = new ObjectInputStream(socket.getInputStream())) {
+		return (int) daoProxyHelper.request((out, in) -> {
 
 			out.writeUTF("/plan/update");
 			out.writeObject(newPlan);
@@ -88,14 +79,12 @@ public class PlanDaoProxy implements PlanDao {
 				throw new Exception(in.readUTF());
 			}
 			return 1;
-		}
+		});
 	}
 
 	@Override
 	public int delete(int no) throws Exception {
-		try (Socket socket = new Socket(serverAddr, port);
-				ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-				ObjectInputStream in = new ObjectInputStream(socket.getInputStream())) {
+		return (int) daoProxyHelper.request((out, in) -> {
 
 			out.writeUTF("/plan/delete");
 			out.writeInt(no);
@@ -106,7 +95,7 @@ public class PlanDaoProxy implements PlanDao {
 				throw new Exception(in.readUTF());
 			}
 			return 1;
-		}
+		});
 	}
 
 }

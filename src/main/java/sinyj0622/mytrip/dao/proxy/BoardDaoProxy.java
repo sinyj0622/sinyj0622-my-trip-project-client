@@ -9,39 +9,33 @@ import sinyj0622.mytrip.domain.Board;
 
 public class BoardDaoProxy implements BoardDao {
 
-	String serverAddr;
-	int port;
+	DaoProxyHelper daoProxyHelper;
 
-	public BoardDaoProxy(String serverAddr, int port) {
-		this.serverAddr = serverAddr;
-		this.port = port;
+	public BoardDaoProxy(DaoProxyHelper daoProxyHelper) {
+		this.daoProxyHelper = daoProxyHelper;
 	}
 
 	@Override
 	public int insert(Board board) throws Exception {
-		try (Socket socket = new Socket(serverAddr, port);
-				ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-				ObjectInputStream in = new ObjectInputStream(socket.getInputStream())) {
 
-			out.writeUTF("/board/add");
-			out.writeObject(board);
-			out.flush();
+		return (int) daoProxyHelper.request((out, in) -> {
+				out.writeUTF("/board/add");
+				out.writeObject(board);
+				out.flush();
 
-			String response = in.readUTF();
-			if (response.equals("FAIL")) {
-				throw new Exception(in.readUTF());
-			}
-			return 1;
-		}
+				String response = in.readUTF();
+				if (response.equals("FAIL")) {
+					throw new Exception(in.readUTF());
+				}
+				return 1;
+			});
+		
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public List<Board> findAll() throws Exception {
-		try (Socket socket = new Socket(serverAddr, port);
-				ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-				ObjectInputStream in = new ObjectInputStream(socket.getInputStream())) {
-			
+		return (List<Board>) daoProxyHelper.request((out, in) -> {
 			out.writeUTF("/board/list");
 			out.flush();
 
@@ -51,14 +45,12 @@ public class BoardDaoProxy implements BoardDao {
 			}
 
 			return (List<Board>) in.readObject();
-		}
+		});
 	}
 
 	@Override
 	public Board findByNo(int no) throws Exception {
-		try (Socket socket = new Socket(serverAddr, port);
-				ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-				ObjectInputStream in = new ObjectInputStream(socket.getInputStream())) {
+		return (Board) daoProxyHelper.request((out, in) -> {
 			out.writeUTF("/board/detail");
 			out.writeInt(no);
 			out.flush();
@@ -68,14 +60,12 @@ public class BoardDaoProxy implements BoardDao {
 				throw new Exception(in.readUTF());
 			}
 			return (Board) in.readObject();
-		}
+		});
 	}
 
 	@Override
 	public int update(Board newBoard) throws Exception {
-		try (Socket socket = new Socket(serverAddr, port);
-				ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-				ObjectInputStream in = new ObjectInputStream(socket.getInputStream())) {
+		return (int) daoProxyHelper.request((out, in) -> {
 			out.writeUTF("/board/update");
 			out.writeObject(newBoard);
 			out.flush();
@@ -85,14 +75,12 @@ public class BoardDaoProxy implements BoardDao {
 				throw new Exception(in.readUTF());
 			}
 			return 1;
-		}
+		});
 	}
 
 	@Override
 	public int delete(int no) throws Exception {
-		try (Socket socket = new Socket(serverAddr, port);
-				ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-				ObjectInputStream in = new ObjectInputStream(socket.getInputStream())) {
+		return (int) daoProxyHelper.request((out, in) -> {
 			out.writeUTF("/board/delete");
 			out.writeInt(no);
 			out.flush();
@@ -102,7 +90,7 @@ public class BoardDaoProxy implements BoardDao {
 				throw new Exception(in.readUTF());
 			}
 			return 1;
-		}
+		});
 	}
 
 }
