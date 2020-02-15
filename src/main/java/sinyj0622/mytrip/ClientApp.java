@@ -47,9 +47,10 @@ public class ClientApp {
 	Deque<String> commandStack = new ArrayDeque<>();
 	Queue<String> commandQueue = new LinkedList<>();
 
-	public void service() {
+	HashMap<String, Command> commandMap;
 
-
+	public ClientApp() {
+		
 		try {
 			serverAddr = prompt.inputString("서버? ");
 			port = prompt.inputInt("포트? ");
@@ -59,6 +60,46 @@ public class ClientApp {
 			keyboard.close();
 			return;
 		}
+		
+		this.commandMap = new HashMap<>();
+
+		BoardDao boardDao = new BoardDaoProxy(serverAddr, port);
+		MemberDao memberDao = new MemberDaoProxy(serverAddr, port);
+		PlanDao planDao = new PlanDaoProxy(serverAddr, port);
+
+		commandMap.put("/board/list", new BoardListCommand(boardDao));
+		commandMap.put("/board/add", new BoardAddCommand(boardDao, prompt));
+		commandMap.put("/board/detail", new BoardDetailCommand(boardDao, prompt));
+		commandMap.put("/board/update", new BoardUpdateCommand(boardDao, prompt));
+		commandMap.put("/board/delete", new BoardDeleteCommand(boardDao, prompt));
+		commandMap.put("/member/list", new MemberListCommand(memberDao));
+		commandMap.put("/member/add", new MemberAddCommand(memberDao, prompt));
+		commandMap.put("/member/detail", new MemberDetailCommand(memberDao, prompt));
+		commandMap.put("/member/update", new MemberUpdateCommand(memberDao, prompt));
+		commandMap.put("/member/delete", new MemberDeleteCommand(memberDao, prompt));
+		commandMap.put("/plan/list", new PlanListCommand(planDao));
+		commandMap.put("/plan/add", new PlanAddCommand(planDao, prompt));
+		commandMap.put("/plan/detail", new PlanDetailCommand(planDao, prompt));
+		commandMap.put("/plan/update", new PlanUpdateCommand(planDao, prompt));
+		commandMap.put("/plan/delete", new PlanDeleteCommand(planDao, prompt));
+
+		commandMap.put("/server/stop", () -> {
+			try (Socket socket = new Socket(serverAddr, port);
+					ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+					ObjectInputStream in = new ObjectInputStream(socket.getInputStream())){
+				out.writeUTF("/server/stop");
+				out.flush();
+				System.out.println("서버: " + in.readUTF());
+				System.out.println("안녕!");
+			} catch (Exception e) {
+
+			}
+		});
+
+	}
+
+	public void service() {
+		
 
 		while(true) {
 			String command;
@@ -79,7 +120,6 @@ public class ClientApp {
 			commandStack.push(command);
 			commandQueue.offer(command);
 
-
 			processCommand(command);
 
 		}
@@ -87,56 +127,19 @@ public class ClientApp {
 	}
 
 	private void processCommand(String command) {
-		try (Socket socket = new Socket(serverAddr, port);
-				ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-				ObjectInputStream in = new ObjectInputStream(socket.getInputStream())) {
 
-			HashMap<String, Command> commandMap = new HashMap<>();
-
-			BoardDao boardDao = new BoardDaoProxy(out, in);
-			MemberDao memberDao = new MemberDaoProxy(out, in);
-			PlanDao planDao = new PlanDaoProxy(out, in);
-
-			commandMap.put("/board/list", new BoardListCommand(boardDao));
-			commandMap.put("/board/add", new BoardAddCommand(boardDao, prompt));
-			commandMap.put("/board/detail", new BoardDetailCommand(boardDao, prompt));
-			commandMap.put("/board/update", new BoardUpdateCommand(boardDao, prompt));
-			commandMap.put("/board/delete", new BoardDeleteCommand(boardDao, prompt));
-			commandMap.put("/member/list", new MemberListCommand(memberDao));
-			commandMap.put("/member/add", new MemberAddCommand(memberDao, prompt));
-			commandMap.put("/member/detail", new MemberDetailCommand(memberDao, prompt));
-			commandMap.put("/member/update", new MemberUpdateCommand(memberDao, prompt));
-			commandMap.put("/member/delete", new MemberDeleteCommand(memberDao, prompt));
-			commandMap.put("/plan/list", new PlanListCommand(planDao));
-			commandMap.put("/plan/add", new PlanAddCommand(planDao, prompt));
-			commandMap.put("/plan/detail", new PlanDetailCommand(planDao, prompt));
-			commandMap.put("/plan/update", new PlanUpdateCommand(planDao, prompt));
-			commandMap.put("/plan/delete", new PlanDeleteCommand(planDao, prompt));
-
-			commandMap.put("/server/stop", () -> {
-				try {
-					out.writeUTF(command);
-					out.flush();
-					System.out.println("서버: " + in.readUTF());
-					System.out.println("안녕!");
-				} catch (Exception e) {
-
-				}
-			}
-					);
-
+		try {
 			Command commandHandler = commandMap.get(command);
 
 			if (commandHandler == null) {
 				System.out.println("실행할 수 없는 명령입니다.");
+				return;
 			} else {
 				commandHandler.execute();
-				}
-
-			out.flush();
+			}
 
 		} catch (Exception e) {
-			System.out.println("예외 발생:");
+			System.out.println("명령어 처리 중 예외 발생:");
 			e.printStackTrace();
 		}
 	}
