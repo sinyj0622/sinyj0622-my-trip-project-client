@@ -29,6 +29,7 @@ public class MemberDetailCommand implements Command {
       System.out.printf("이메일: %s\n", member.getEmail());
       System.out.printf("사진: %s\n", member.getMyphoto());
       System.out.printf("전화: %s\n", member.getPhonenumber());
+      System.out.printf("등록일: %s\n", member.getRegisteredDate());
 
     } catch (Exception e) {
       System.out.println("조회 실패");

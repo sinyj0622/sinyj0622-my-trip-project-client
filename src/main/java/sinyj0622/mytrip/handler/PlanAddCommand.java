@@ -17,9 +17,8 @@ public class PlanAddCommand implements Command {
   @Override
   public void execute() {
     Plan travelPlan = new Plan();
-    travelPlan.setNo(prompt.inputInt("번호: "));
     travelPlan.setTravelTitle(prompt.inputString("여행 제목? "));
-    travelPlan.setDestnation(prompt.inputString("어디로 떠나세요?: "));
+    travelPlan.setDestnation(prompt.inputString("어디로 떠나세요? "));
     travelPlan.setPerson(prompt.inputString("여행 인원? "));
     travelPlan.setStartDate(prompt.inputString("여행 시작일? "));
     travelPlan.setEndDate(prompt.inputString("여행 종료일? "));

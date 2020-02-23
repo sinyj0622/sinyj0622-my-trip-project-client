@@ -4,6 +4,7 @@ package sinyj0622.mytrip;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.sql.DriverManager;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
@@ -15,7 +16,9 @@ import java.util.Scanner;
 import sinyj0622.mytrip.dao.BoardDao;
 import sinyj0622.mytrip.dao.MemberDao;
 import sinyj0622.mytrip.dao.PlanDao;
-import sinyj0622.mytrip.dao.proxy.BoardDaoProxy;
+import sinyj0622.mytrip.dao.mariadb.BoardDaoImpl;
+import sinyj0622.mytrip.dao.mariadb.MemberDaoImpl;
+import sinyj0622.mytrip.dao.mariadb.PlanDaoImpl;
 import sinyj0622.mytrip.dao.proxy.DaoProxyHelper;
 import sinyj0622.mytrip.dao.proxy.MemberDaoProxy;
 import sinyj0622.mytrip.dao.proxy.PlanDaoProxy;
@@ -51,25 +54,25 @@ public class ClientApp {
 
 	HashMap<String, Command> commandMap;
 
-	public ClientApp() {
+	public ClientApp() throws Exception {
 		
-		try {
-			serverAddr = prompt.inputString("서버? ");
-			port = prompt.inputInt("포트? ");
-
-		} catch (Exception e) {
-			System.out.println("서버 주소 또는 포트 번호가 유효하지 않습니다!");
-			keyboard.close();
-			return;
-		}
 		
 		this.commandMap = new HashMap<>();
 		
-		DaoProxyHelper daoProxyHelper = new DaoProxyHelper(serverAddr, port);
+	    // DB 연결객체 준비
+	    Class.forName("org.mariadb.jdbc.Driver");
+		java.sql.Connection con = DriverManager.getConnection("jdbc:mariadb://localhost/studydb",
+				"study", "1111");
+		
+		BoardDao boardDao = new BoardDaoImpl(con);
+		MemberDao memberDao = new MemberDaoImpl(con);
+		PlanDao planDao = new PlanDaoImpl(con);
+		
+		//DaoProxyHelper daoProxyHelper = new DaoProxyHelper(serverAddr, port);
 
-		BoardDao boardDao = new BoardDaoProxy(daoProxyHelper);
-		MemberDao memberDao = new MemberDaoProxy(daoProxyHelper);
-		PlanDao planDao = new PlanDaoProxy(daoProxyHelper);
+		//BoardDao boardDao = new BoardDaoProxy(daoProxyHelper);
+		//MemberDao memberDao = new MemberDaoProxy(daoProxyHelper);
+		//PlanDao planDao = new PlanDaoProxy(daoProxyHelper);
 
 		commandMap.put("/board/list", new BoardListCommand(boardDao));
 		commandMap.put("/board/add", new BoardAddCommand(boardDao, prompt));
@@ -163,7 +166,7 @@ public class ClientApp {
 		}
 	}
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 
 		System.out.println("클라이언트 여행 관리 시스템입니다");
 

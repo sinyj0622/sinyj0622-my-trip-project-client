@@ -18,7 +18,6 @@ public class BoardAddCommand implements Command {
   @Override
   public void execute() {
     Board board = new Board();
-    board.setNo(prompt.inputInt("번호: "));
     board.setText(prompt.inputString("내용: "));
     board.setDate(new Date(System.currentTimeMillis()));
     board.setViewCount(0);
