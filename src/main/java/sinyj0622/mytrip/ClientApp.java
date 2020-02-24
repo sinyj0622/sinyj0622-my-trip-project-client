@@ -1,43 +1,15 @@
 
 package sinyj0622.mytrip;
 
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.PrintStream;
 import java.net.Socket;
-import java.sql.DriverManager;
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Scanner;
 
-import sinyj0622.mytrip.dao.BoardDao;
-import sinyj0622.mytrip.dao.MemberDao;
-import sinyj0622.mytrip.dao.PlanDao;
-import sinyj0622.mytrip.dao.mariadb.BoardDaoImpl;
-import sinyj0622.mytrip.dao.mariadb.MemberDaoImpl;
-import sinyj0622.mytrip.dao.mariadb.PlanDaoImpl;
-import sinyj0622.mytrip.dao.proxy.DaoProxyHelper;
-import sinyj0622.mytrip.dao.proxy.MemberDaoProxy;
-import sinyj0622.mytrip.dao.proxy.PlanDaoProxy;
-import sinyj0622.mytrip.handler.BoardAddCommand;
-import sinyj0622.mytrip.handler.BoardDeleteCommand;
-import sinyj0622.mytrip.handler.BoardDetailCommand;
-import sinyj0622.mytrip.handler.BoardListCommand;
-import sinyj0622.mytrip.handler.BoardUpdateCommand;
-import sinyj0622.mytrip.handler.Command;
-import sinyj0622.mytrip.handler.MemberAddCommand;
-import sinyj0622.mytrip.handler.MemberDeleteCommand;
-import sinyj0622.mytrip.handler.MemberDetailCommand;
-import sinyj0622.mytrip.handler.MemberListCommand;
-import sinyj0622.mytrip.handler.MemberUpdateCommand;
-import sinyj0622.mytrip.handler.PlanAddCommand;
-import sinyj0622.mytrip.handler.PlanDeleteCommand;
-import sinyj0622.mytrip.handler.PlanDetailCommand;
-import sinyj0622.mytrip.handler.PlanListCommand;
-import sinyj0622.mytrip.handler.PlanUpdateCommand;
 import sinyj0622.util.Prompt;
 
 public class ClientApp {
@@ -46,67 +18,17 @@ public class ClientApp {
 	Scanner keyboard = new Scanner(System.in);
 	Prompt prompt = new Prompt(keyboard);
 
-	String serverAddr = null;
-	int port = 0;
+	Deque<String> commandStack;
+	Queue<String> commandQueue;
 
-	Deque<String> commandStack = new ArrayDeque<>();
-	Queue<String> commandQueue = new LinkedList<>();
-
-	HashMap<String, Command> commandMap;
 
 	public ClientApp() throws Exception {
-		
-		
-		this.commandMap = new HashMap<>();
-		
-	    // DB 연결객체 준비
-	    Class.forName("org.mariadb.jdbc.Driver");
-		java.sql.Connection con = DriverManager.getConnection("jdbc:mariadb://localhost/studydb",
-				"study", "1111");
-		
-		BoardDao boardDao = new BoardDaoImpl(con);
-		MemberDao memberDao = new MemberDaoImpl(con);
-		PlanDao planDao = new PlanDaoImpl(con);
-		
-		//DaoProxyHelper daoProxyHelper = new DaoProxyHelper(serverAddr, port);
-
-		//BoardDao boardDao = new BoardDaoProxy(daoProxyHelper);
-		//MemberDao memberDao = new MemberDaoProxy(daoProxyHelper);
-		//PlanDao planDao = new PlanDaoProxy(daoProxyHelper);
-
-		commandMap.put("/board/list", new BoardListCommand(boardDao));
-		commandMap.put("/board/add", new BoardAddCommand(boardDao, prompt));
-		commandMap.put("/board/detail", new BoardDetailCommand(boardDao, prompt));
-		commandMap.put("/board/update", new BoardUpdateCommand(boardDao, prompt));
-		commandMap.put("/board/delete", new BoardDeleteCommand(boardDao, prompt));
-		commandMap.put("/member/list", new MemberListCommand(memberDao));
-		commandMap.put("/member/add", new MemberAddCommand(memberDao, prompt));
-		commandMap.put("/member/detail", new MemberDetailCommand(memberDao, prompt));
-		commandMap.put("/member/update", new MemberUpdateCommand(memberDao, prompt));
-		commandMap.put("/member/delete", new MemberDeleteCommand(memberDao, prompt));
-		commandMap.put("/plan/list", new PlanListCommand(planDao));
-		commandMap.put("/plan/add", new PlanAddCommand(planDao, prompt));
-		commandMap.put("/plan/detail", new PlanDetailCommand(planDao, prompt));
-		commandMap.put("/plan/update", new PlanUpdateCommand(planDao, prompt));
-		commandMap.put("/plan/delete", new PlanDeleteCommand(planDao, prompt));
-
-		commandMap.put("/server/stop", () -> {
-			try (Socket socket = new Socket(serverAddr, port);
-					ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-					ObjectInputStream in = new ObjectInputStream(socket.getInputStream())){
-				out.writeUTF("/server/stop");
-				out.flush();
-				System.out.println("서버: " + in.readUTF());
-				System.out.println("안녕!");
-			} catch (Exception e) {
-
-			}
-		});
+		commandStack = new ArrayDeque<>();
+		commandQueue = new LinkedList<>();
 
 	}
 
 	public void service() {
-		
 
 		while(true) {
 			String command;
@@ -135,20 +57,67 @@ public class ClientApp {
 
 	private void processCommand(String command) {
 
-		try {
-			Command commandHandler = commandMap.get(command);
+		String host = null;
+	    int port = 7777;
+	    String servletPath = null;
 
-			if (commandHandler == null) {
-				System.out.println("실행할 수 없는 명령입니다.");
-				return;
-			} else {
-				commandHandler.execute();
-			}
+	    // 명령어를 분석하여 서버주소와 포트번호, 실행시킬 작업명을 분리한다.
+	    try {
+	      if (!command.startsWith("bitcamp://")) {
+	        throw new Exception("명령어 형식이 옳지 않습니다!");
+	      }
 
-		} catch (Exception e) {
-			System.out.println("명령어 처리 중 예외 발생:");
-			e.printStackTrace();
-		}
+
+	      String url = command.substring(10);
+
+	      // System.out.println(url);
+
+	      int index = url.indexOf('/'); // 14
+	      String[] str = //
+	          url.substring(0, index) // localhost:7777
+	              .split(":"); // {"localhost", "7777"}
+
+	      host = str[0];
+	      if (str.length == 2) {
+	        port = Integer.parseInt(str[1]);
+	      }
+	      // System.out.printf("=> %s:%d\n", host, port); // => localhost:7777
+
+	      servletPath = url.substring(index);
+	      // System.out.printf("=> %s\n", servletPath); // => /board/list
+
+	    } catch (Exception e) {
+	      System.out.println(e.getMessage());
+	      return;
+	    }
+
+	    // 서버에 연결한다.
+	    try (Socket socket = new Socket(host, port);
+	        PrintStream out = new PrintStream(socket.getOutputStream());
+	        Scanner in = new Scanner(socket.getInputStream())) {
+
+	      // 서버에 명령을 보낸다.
+	      out.println(servletPath);
+	      out.flush();
+
+	      // 서버의 응답을 읽어서 출력한다.
+	      while (true) {
+	        String response = in.nextLine();
+	        if (response.equals("!end!")) {
+	          break;
+	        } else if (response.equals("!@#")) {
+	          String input = prompt.inputString("");
+	          out.println(input);
+	        } else {
+	          System.out.println(response);
+	        }
+	      }
+	      
+	      
+
+	    } catch (Exception e) {
+	      System.out.println(e.getMessage());
+	    }
 	}
 
 	private void printCommandHistory(Iterator<String> iterator) {
